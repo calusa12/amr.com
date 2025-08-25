@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Para el Amor de Mi Vida</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Montserrat:wght@300;400;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            color: #fff;
+            overflow: hidden;
+            background: #000;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #slideshow-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        #photo-slideshow {
+            max-width: 90%;
+            max-height: 90vh;
+            object-fit: contain;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        #photo-slideshow.active {
+            opacity: 1;
+        }
+        
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: -1;
+        }
+        
+        .quote-container {
+            position: absolute;
+            bottom: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            padding: 1.5rem 2.5rem;
+            border-radius: 50px;
+            max-width: 90%;
+            text-align: center;
+            animation: fadeIn 2s ease-in-out;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .quote {
+            font-family: 'Dancing Script', cursive;
+            font-size: 2rem;
+            color: #fff;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0;
+            user-select: none;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) scale(0.5) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.8;
+            }
+            90% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-100px) scale(1) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            #photo-slideshow {
+                max-width: 95%;
+            }
+            
+            .quote {
+                font-size: 1.5rem;
+                white-space: normal;
+            }
+            
+            .quote-container {
+                padding: 1rem 1.5rem;
+                border-radius: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="slideshow-container">
+        <img id="photo-slideshow" class="active" alt="Nuestros momentos">
+        <div class="overlay"></div>
+    </div>
+    
+    <div class="particles" id="particles"></div>
+    
+    <div class="quote-container">
+        <div class="quote" id="quote">Cargando momentos especiales...</div>
+    </div>
+    
+    <!-- Reproductor de música oculto -->
+    <audio id="bgMusic" loop>
+        <source src="rosas.mp3" type="audio/mp3">
+        Tu navegador no soporta el elemento de audio.
+    </audio>
+    
+    <script>
+        // Configuración
+        const config = {
+            slideDuration: 5000, // 5 segundos por foto
+            // Orden personalizado de las imágenes
+            imageOrder: [
+                1, 32, 2, 30, 3, 29, 4, 28, 5, 26, 
+                6, 25, 7, 24, 8, 23, 9, 22, 10, 21,
+                11, 20, 12, 19, 13, 18, 14, 15, 16, 17
+            ],
+            quotes: [
+                "Eres mi persona favorita en todo el mundo",
+                "Cada día a tu lado es un regalo",
+                "Tu sonrisa ilumina mis días más oscuros",
+                "Eres mi sueño hecho realidad",
+                "Contigo el tiempo vuela",
+                "Eres mi mayor aventura",
+                "Te amo más que ayer, menos que mañana",
+                "Eres mi paz y mi felicidad",
+                "Gracias por estar a mi lado",
+                "Eres perfecta tal como eres",
+                "Mi corazón late por ti",
+                "Eres la razón de mi sonrisa",
+                "Contigo todo es mejor",
+                "Eres mi todo",
+                "Te amo con todo mi ser"
+            ],
+            particleTypes: [
+                '❤️', '🌸', '🌹', '💐', '🌺', '🌷', '🌻', '💖', '🥀', '✨', '🎉', '🎊', '🎀',
+                '💕', '💓', '💗', '💘', '💝', '💞', '💟', '❣️', '💌', '💋'
+            ]
+        };
+        
+        // Elementos del DOM
+        const slideshow = document.getElementById('photo-slideshow');
+        const quoteElement = document.getElementById('quote');
+        const particlesContainer = document.getElementById('particles');
+        
+        // Cargar imágenes
+        const images = [];
+        const totalImages = 30; // Número total de imágenes
+        let slideInterval;
+        
+        // Precargar imágenes
+        function preloadImages() {
+            // Usar el orden personalizado
+            config.imageOrder.forEach(imgNumber => {
+                const img = new Image();
+                const imgName = imgNumber <= 15 ? `${imgNumber}.jpg` : `${imgNumber}.jpeg`;
+                img.src = imgName;
+                images.push({
+                    element: img,
+                    number: imgNumber
+                });
+            });
+        }
+        
+        // Mostrar imagen actual
+        function showImage(index) {
+            if (images.length === 0) return;
+            
+            // Asegurarse de que el índice esté dentro de los límites
+            config.currentIndex = (index + images.length) % images.length;
+            const currentImage = images[config.currentIndex];
+            
+            // Transición de cambio de imagen
+            slideshow.classList.remove('active');
+            setTimeout(() => {
+                slideshow.src = currentImage.element.src;
+                slideshow.alt = `Foto ${currentImage.number}`;
+                slideshow.classList.add('active');
+                showRandomQuote();
+                createParticles();
+            }, 500);
+        }
+        
+        // Mostrar cita aleatoria
+        function showRandomQuote() {
+            const randomIndex = Math.floor(Math.random() * config.quotes.length);
+            quoteElement.style.opacity = 0;
+            
+            setTimeout(() => {
+                quoteElement.textContent = config.quotes[randomIndex];
+                quoteElement.style.opacity = 1;
+            }, 300);
+        }
+        
+        // Crear partículas de efectos
+        function createParticles() {
+            const particleCount = 15 + Math.floor(Math.random() * 15);
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                const size = 20 + Math.random() * 40;
+                const type = config.particleTypes[Math.floor(Math.random() * config.particleTypes.length)];
+                
+                particle.className = 'particle';
+                particle.textContent = type;
+                particle.style.fontSize = `${size}px`;
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = '100%';
+                particle.style.animation = `float ${3 + Math.random() * 5}s linear forwards`;
+                particle.style.animationDelay = `${Math.random() * 2}s`;
+                
+                particlesContainer.appendChild(particle);
+                
+                // Eliminar partícula después de la animación
+                setTimeout(() => {
+                    if (particle.parentNode === particlesContainer) {
+                        particle.remove();
+                    }
+                }, 8000);
+            }
+            
+            // Efecto de confeti ocasional
+            if (Math.random() > 0.8) {
+                createConfetti();
+            }
+        }
+        
+        // Efecto de confeti
+        function createConfetti() {
+            const confettiCount = 30 + Math.floor(Math.random() * 40);
+            const colors = ['#ff6b9d', '#ffb8d9', '#ff8cb8', '#ffd6e7', '#ff4785'];
+            
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                const size = 5 + Math.random() * 10;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                confetti.className = 'particle';
+                confetti.style.width = `${size}px`;
+                confetti.style.height = `${size}px`;
+                confetti.style.backgroundColor = color;
+                confetti.style.left = `${Math.random() * 100}%`;
+                confetti.style.top = '0';
+                confetti.style.borderRadius = '50%';
+                confetti.style.transform = 'rotate(0deg)';
+                
+                // Animación personalizada para cada confeti
+                const animation = confetti.animate([
+                    { 
+                        transform: `translateY(0) rotate(0deg) scale(1)`,
+                        opacity: 0
+                    },
+                    { 
+                        transform: `translateY(10vh) rotate(180deg) scale(0.8)`,
+                        opacity: 1
+                    },
+                    { 
+                        transform: `translateY(100vh) rotate(360deg) scale(0.5)`,
+                        opacity: 0
+                    }
+                ], {
+                    duration: 2000 + Math.random() * 3000,
+                    easing: 'cubic-bezier(0.4, 0, 0.6, 1)'
+                });
+                
+                particlesContainer.appendChild(confetti);
+                
+                // Eliminar confeti después de la animación
+                animation.onfinish = () => {
+                    if (confetti.parentNode === particlesContainer) {
+                        confetti.remove();
+                    }
+                };
+            }
+        }
+        
+        // Iniciar el slideshow automático
+        function startSlideshow() {
+            showImage(0);
+            setInterval(() => {
+                showImage(config.currentIndex + 1);
+            }, config.slideDuration);
+        }
+        
+        // Inicialización
+        function init() {
+            // Iniciar música automáticamente (requiere interacción del usuario)
+            document.addEventListener('click', function startAudio() {
+                const audio = document.getElementById('bgMusic');
+                audio.play().catch(e => console.log("No se pudo reproducir el audio automáticamente:", e));
+                document.removeEventListener('click', startAudio);
+            }, { once: true });
+            
+            preloadImages();
+            
+            // Esperar a que se cargue la primera imagen
+            const checkImagesLoaded = setInterval(() => {
+                if (images.length > 0 && images[0].element.complete) {
+                    clearInterval(checkImagesLoaded);
+                    startSlideshow();
+                }
+            }, 100);
+            
+            // Crear partículas periódicamente
+            setInterval(createParticles, 2000);
+        }
+        
+        // Iniciar la aplicación
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
